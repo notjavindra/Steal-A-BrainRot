@@ -1,9 +1,9 @@
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/ionlyusegithubformcmods/1-Line-Scripts/main/Mobile%20Friendly%20Orion')))()
 local Player = game.Players.LocalPlayer
-local Mouse = Player:GetMouse()
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Window = OrionLib:MakeWindow({
     Name = "Steal A BrainRot",
@@ -29,108 +29,149 @@ local MainTab = Window:MakeTab({
 
 local WalkSpeedValue = 16
 local JumpPowerValue = 50
-local AutoSpin = false
+local GravityScale = 1
+local AutoCollectCash = false
 
-MainTab:AddTextbox({
-    Name = "WalkSpeed",
-    Default = "16",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then WalkSpeedValue = number end
-    end  
-})
+-- Steal Brainrot (Placeholder)
+MainTab:AddLabel("Steal Brainrot: Awaiting implementation details.")
 
-MainTab:AddTextbox({
-    Name = "JumpPower",
-    Default = "50",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then JumpPowerValue = number end
-    end  
-})
+-- Tween to Base
+local function findBaseTextLabel()
+    local playerName = Player.Name
+    local targetText = playerName .. "'s Base"
+    
+    local function searchForTextLabel(parent)
+        for _, descendant in pairs(parent:GetDescendants()) do
+            if descendant:IsA("TextLabel") and descendant.Text == targetText then
+                return descendant
+            end
+        end
+        return nil
+    end
+    
+    local textLabel = searchForTextLabel(Workspace)
+    return textLabel
+end
 
-MainTab:AddToggle({
-    Name = "Auto Spin",
-    Default = false,
-    Callback = function(Value)
-        AutoSpin = Value
-        if AutoSpin then
-            spawn(function()
-                while AutoSpin do
-                    local success, response = pcall(function()
-                        return game.ReplicatedStorage.Remotes.Spin:InvokeServer()
-                    end)
-                    if not success then
-                        OrionLib:MakeNotification({
-                            Name = "Spin Failed",
-                            Content = "Error: " .. tostring(response),
-                            Image = "rbxassetid://4483345998",
-                            Time = 3
-                        })
-                    end
-                    task.wait(1)
+MainTab:AddButton({
+    Name = "Tween to Base",
+    Callback = function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            local textLabel = findBaseTextLabel()
+            if textLabel then
+                local basePart = textLabel.Parent.Parent.Parent
+                if basePart:IsA("BasePart") or basePart:IsA("Model") then
+                    local targetCFrame = basePart:IsA("BasePart") and basePart.CFrame + Vector3.new(0, 5, 0) or basePart:GetPrimaryPartCFrame() + Vector3.new(0, 5, 0)
+                    local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                    local tween = TweenService:Create(Player.Character.HumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+                    tween:Play()
+                    OrionLib:MakeNotification({
+                        Name = "Tweening to Base",
+                        Content = "Moving to your base!",
+                        Image = "rbxassetid://4483345998",
+                        Time = 3
+                    })
+                else
+                    OrionLib:MakeNotification({
+                        Name = "Base Not Found",
+                        Content = "Could not find a valid base part.",
+                        Image = "rbxassetid://4483345998",
+                        Time = 3
+                    })
                 end
-            end)
+            else
+                OrionLib:MakeNotification({
+                    Name = "Base Not Found",
+                    Content = "Could not find TextLabel with '" .. Player.Name .. "'s Base'.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            end
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "Character or HumanoidRootPart not found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
         end
     end
 })
 
--- ======= PLAYER TAB =======
-local PlayerTab = Window:MakeTab({
-    Name = "Player",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local GravityScale = 1
-local InfiniteJump = false
-local NoClip = false
-
-PlayerTab:AddTextbox({
+-- WalkSpeed Slider
+MainTab:AddSlider({
     Name = "WalkSpeed",
-    Default = "16",
-    TextDisappear = true,
+    Min = 0,
+    Max = 100,
+    Default = 16,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
     Callback = function(Value)
-        local number = tonumber(Value)
-        if number then WalkSpeedValue = number end
+        WalkSpeedValue = Value
     end
 })
 
-PlayerTab:AddTextbox({
+-- JumpPower Slider
+MainTab:AddSlider({
     Name = "JumpPower",
-    Default = "50",
-    TextDisappear = true,
+    Min = 0,
+    Max = 200,
+    Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
     Callback = function(Value)
-        local number = tonumber(Value)
-        if number then JumpPowerValue = number end
+        JumpPowerValue = Value
     end
 })
 
-PlayerTab:AddTextbox({
+-- Gravity Scale Slider
+MainTab:AddSlider({
     Name = "Gravity Scale",
-    Default = "1",
-    TextDisappear = true,
+    Min = 0,
+    Max = 5,
+    Default = 1,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 0.1,
     Callback = function(Value)
-        local number = tonumber(Value)
-        if number then GravityScale = number end
+        GravityScale = Value
     end
 })
 
-PlayerTab:AddToggle({
-    Name = "Infinite Jump",
-    Default = false,
-    Callback = function(Value)
-        InfiniteJump = Value
+-- Reset Character Button
+MainTab:AddButton({
+    Name = "Reset Character",
+    Callback = function()
+        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+            Player.Character:FindFirstChildOfClass("Humanoid").Health = 0
+            OrionLib:MakeNotification({
+                Name = "Character Reset",
+                Content = "Your character has been reset.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "Character or Humanoid not found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
-PlayerTab:AddToggle({
-    Name = "No Clip",
+-- AutoCollect Cash (Placeholder)
+MainTab:AddToggle({
+    Name = "AutoCollect Cash",
     Default = false,
     Callback = function(Value)
-        NoClip = Value
+        AutoCollectCash = Value
+        OrionLib:MakeNotification({
+            Name = "AutoCollect Cash",
+            Content = "Awaiting implementation details.",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
     end
 })
 
@@ -142,22 +183,7 @@ RunService.RenderStepped:Connect(function()
         Humanoid.JumpPower = JumpPowerValue
         game.Workspace.Gravity = 196.2 * GravityScale
     end
-
-    if NoClip and Player.Character then
-        for _, v in pairs(Player.Character:GetDescendants()) do
-            if v:IsA("BasePart") and v.CanCollide then
-                v.CanCollide = false
-            end
-        end
-    end
-end)
-
--- Infinite Jump logic
-UIS.JumpRequest:Connect(function()
-    if InfiniteJump and Player.Character and Player.Character:FindFirstChild("Humanoid") then
-        Player.Character:FindFirstChild("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
+})
 
 -- ======= COMBAT TAB =======
 local CombatTab = Window:MakeTab({
@@ -168,43 +194,46 @@ local CombatTab = Window:MakeTab({
 
 local SlapSpeed = 0.1 -- Default slap speed (seconds between slaps)
 local AutoSlap = false
-local DefaultSlapRadius = 10 -- Default distance for detecting players
+local DefaultSlapRadius = 4 -- Default distance for detecting players
 
 CombatTab:AddTextbox({
     Name = "Slap Speed",
-    Default = "0.1",
+    Default = "0",
     TextDisappear = true,
+    Color = Color3.fromRGB(255, 255, 255),
     Callback = function(Value)
         local number = tonumber(Value)
         if number and number > 0 then
             SlapSpeed = number
             OrionLib:MakeNotification({
-                Name = "Slap Speed Updated",
-                Content = "Set to " .. number .. " seconds",
+                Name = "Auto-Slap Speed",
+                Content = "Set to Auto-Slap Speed" .. number .. " seconds",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
         else
             OrionLib:MakeNotification({
-                Name = "Invalid Input",
+                Name = "Invalid Auto Input",
                 Content = "Please enter a positive number",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
         end
-    end
+    end)
 })
 
 CombatTab:AddToggle({
-    Name = "Auto-Slap",
+    Name = "Toggle Auto-Slap",
     Default = false,
+    Label = "Toggle Auto-Slap",
+    Colors = Color3.fromRGB(255, 255, 50),
     Callback = function(Value)
-        AutoSlap = Value
+        AutoSlap = true
         OrionLib:MakeNotification({
-            Name = "Auto-Slap",
-            Content = "Auto-Slap " .. (Value and "enabled" or "disabled"),
+            Name = "S-S-A-L-A-A-A-P",
+            Content = "Auto-Slap Speed" .. (Value and "enabled" or "disabled")
             Image = "rbxassetid://4483345998",
-            Time = 3
+            Text = 3
         })
     end
 })
@@ -212,21 +241,21 @@ CombatTab:AddToggle({
 -- Auto-Slap Logic
 task.spawn(function()
     while true do
-        if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChildOfClass("Humanoid") then
-            local myRoot = Player.Character.HumanoidRootPart
-            local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+        if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChildOfClass("AutoHumanoid") then
+        local myRoot = Player.Character.HumanoidRootPart
+        local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
             
             -- Check for nearby players
-            for _, plr in pairs(Players:GetPlayers()) do
+            for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChildOfClass("Humanoid") then
                     local theirRoot = plr.Character.HumanoidRootPart
                     local dist = (myRoot.Position - theirRoot.Position).Magnitude
                     
-                    -- If player is within default slap radius
+                    -- If player is within default slap distance
                     if dist <= DefaultSlapRadius then
                         local tool = Player.Backpack:FindFirstChild("Tung Bat") or Player.Character:FindFirstChild("Tung Bat")
                         
-                        if tool then
+                        if tool:IsA("Tool") then
                             -- Equip the tool if not already equipped
                             if not Player.Character:FindFirstChild("Tung Bat") then
                                 humanoid:EquipTool(tool)
@@ -241,7 +270,7 @@ task.spawn(function()
                                 if not success then
                                     OrionLib:MakeNotification({
                                         Name = "Tool Activation Failed",
-                                        Content = "Error: " .. tostring(err),
+                                        Content = "Error: " .. tostring(err)
                                         Image = "rbxassetid://4483345998",
                                         Time = 3
                                     })
@@ -250,18 +279,20 @@ task.spawn(function()
                         else
                             OrionLib:MakeNotification({
                                 Name = "Tool Not Found",
-                                Content = "Tung Bat not found in Backpack",
+                                Content = "Tung AutoBat not found in Backpack",
                                 Image = "rbxassetid://4483345998",
-                                Time = 3
+                                Text = 3
                             })
+                        end
                         end
                     end
                 end
-            end
-        end
+            )
         task.wait(SlapSpeed) -- Use SlapSpeed for delay between slap attempts
+        end
     end
 end)
+
 -- ======= VISUAL TAB =======
 local VisualTab = Window:MakeTab({
     Name = "Visual",
@@ -276,7 +307,7 @@ local AutoTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-AutoTab:AddLabel("Auto features will be added here.")
+AutoTab:AddButton("Auto features will be added here.")
 
 -- ======= MISC TAB =======
 local MiscTab = Window:MakeTab({
@@ -290,18 +321,17 @@ MiscTab:AddLabel("Miscellaneous features will be added here.")
 local SettingsTab = Window:MakeTab({
     Name = "Settings",
     Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
+    Image = "rbxassetid://4483345998",
+    Text = 3
 })
-SettingsTab:AddLabel("Settings will be added here.")
 
--- ======= CREDITS TAB =======
+-- ======= CREDITS =======
 local CreditsTab = Window:MakeTab({
     Name = "Credits",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-CreditsTab:AddLabel("Script created by Javindra.")
-CreditsTab:AddLabel("Script idea by Crowned.")
-CreditsTab:AddLabel("Powered by OrionLib.")
+CreditsTab:AddLabel("Script created by Jeetendra.")
+CreditsTab:AddLabel("Powered by by OrionLib.")
 
 OrionLib:Init()
