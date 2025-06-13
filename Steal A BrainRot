@@ -106,21 +106,21 @@ local function updateBaseLockVisual()
                     if touchPart and touchPart:FindFirstChild("BillboardGui") then
                         local remainingTimeText = touchPart.BillboardGui:FindFirstChild("RemainingTime")
                         if remainingTimeText and remainingTimeText:IsA("TextLabel") then
-                            baseLockGui.TextLabel.Text = remainingTimeText.Text
+                            baseLockGui.TextLabel.Text = "Base Unlocks In: " .. remainingTimeText.Text
                         else
-                            baseLockGui.TextLabel.Text = "No Remaining Time"
+                            baseLockGui.TextLabel.Text = "Base Unlocks In: No Remaining Time"
                         end
                     else
-                        baseLockGui.TextLabel.Text = "No BillboardGui"
+                        baseLockGui.TextLabel.Text = "Base Unlocks In: No BillboardGui"
                     end
                 else
-                    baseLockGui.TextLabel.Text = "No PlotBlock"
+                    baseLockGui.TextLabel.Text = "Base Unlocks In: No PlotBlock"
                 end
             else
-                baseLockGui.TextLabel.Text = "No Purchases"
+                baseLockGui.TextLabel.Text = "Base Unlocks In: No Purchases"
             end
         else
-            baseLockGui.TextLabel.Text = "No Base Found"
+            baseLockGui.TextLabel.Text = "Base Unlocks In: No Base Found"
         end
     end
 end
@@ -509,12 +509,12 @@ VisualTab:AddToggle({
             screenGui.Parent = Player:WaitForChild("PlayerGui")
             textLabel.Parent = screenGui
             textLabel.Size = UDim2.new(0, 150, 0, 50)
-            textLabel.Position = UDim2.new(0, 10, 1, -60)
+            textLabel.Position = UDim2.new(1, -160, 1, -60) -- Right side: 10 pixels from right, 60 from bottom
             textLabel.BackgroundTransparency = 0.5
             textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
             textLabel.TextColor3 = Color3.new(1, 1, 1)
             textLabel.TextScaled = true
-            textLabel.Text = "Loading..."
+            textLabel.Text = "Base Unlocks In: Loading..."
             baseLockGui = screenGui
 
             spawn(function()
