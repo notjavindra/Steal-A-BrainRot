@@ -585,6 +585,7 @@ local MiscTab = Window:MakeTab({
 
 local antiAFK = false
 local fpsBoost = false
+local spinBot = false
 
 -- Auto Rejoin Button
 MiscTab:AddButton({
@@ -698,6 +699,37 @@ MiscTab:AddToggle({
             OrionLib:MakeNotification({
                 Name = "FPS Booster",
                 Content = "FPS Booster disabled",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+-- Spin Bot Toggle
+MiscTab:AddToggle({
+    Name = "Spin Bot",
+    Default = false,
+    Callback = function(Value)
+        spinBot = Value
+        if spinBot and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            spawn(function()
+                while spinBot do
+                    local root = Player.Character.HumanoidRootPart
+                    root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(5), 0) -- Rotate 5 degrees per frame
+                    task.wait(0.01) -- Adjust speed of spin (0.01 seconds per rotation step)
+                end
+            end)
+            OrionLib:MakeNotification({
+                Name = "Spin Bot",
+                Content = "Spin Bot enabled",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Spin Bot",
+                Content = "Spin Bot disabled",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
