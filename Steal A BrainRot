@@ -26,8 +26,10 @@ OrionLib:MakeNotification({
 -- Visuals Tab Enhancements
 local playerHighlights = {}
 local playerNameGuis = {}
+local lockedEspGuis = {}
 local espEnabled = false
 local nameEnabled = false
+local lockedEspEnabled = false
 local baseLockEnabled = false
 local baseLockGui = nil
 
@@ -76,6 +78,104 @@ local function removeNameGui(player)
     if playerNameGuis[player] then
         playerNameGuis[player]:Destroy()
         playerNameGuis[player] = nil
+    end
+end
+
+local function addLockedEsp(player)
+    if player ~= Player and player.Character and lockedEspEnabled then
+        local head = player.Character:WaitForChild("Head")
+        local billboard = Instance.new("BillboardGui")
+        billboard.AlwaysOnTop = true
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 4, 0)
+        billboard.Adornee = head
+        local textLabel = Instance.new("TextLabel", billboard)
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.new(1, 0, 0) -- Red for locked
+        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+        textLabel.TextStrokeTransparency = 0
+        textLabel.TextScaled = true
+
+        -- Simulate finding locked timer (using player's base hierarchy as a proxy)
+        local playerName = player.Name
+        local targetText = playerName .. "'s Base"
+        local function searchForTextLabel(parent)
+            for _, descendant in pairs(parent:GetDescendants()) do
+                if descendant:IsA("TextLabel") and descendant.Text == targetText then
+                    return descendant
+                end
+            end
+            return nil
+        end
+        local textLabelBase = searchForTextLabel(Workspace)
+        if textLabelBase then
+            local touchPart = textLabelBase.Parent.Parent.Parent.Parent:FindFirstChild("Purchases")
+            if touchPart then
+                touchPart = touchPart:FindFirstChild("PlotBlock")
+                if touchPart then
+                    touchPart = touchPart:FindFirstChild("Main")
+                    if touchPart and touchPart:FindFirstChild("BillboardGui") then
+                        local remainingTimeText = touchPart.BillboardGui:FindFirstChild("RemainingTime")
+                        if remainingTimeText and remainingTimeText:IsA("TextLabel") then
+                            textLabel.Text = "Locked: " .. remainingTimeText.Text
+                        else
+                            textLabel.Text = "Locked: No Timer"
+                        end
+                    else
+                        textLabel.Text = "Locked: No BillboardGui"
+                    end
+                else
+                    textLabel.Text = "Locked: No PlotBlock"
+                end
+            else
+                textLabel.Text = "Locked: No Purchases"
+            end
+        else
+            textLabel.Text = "Locked: No Base Found"
+        end
+
+        billboard.Parent = head
+        lockedEspGuis[player] = billboard
+
+        spawn(function()
+            while lockedEspEnabled and lockedEspGuis[player] do
+                local textLabelBase = searchForTextLabel(Workspace)
+                if textLabelBase and lockedEspGuis[player] then
+                    local touchPart = textLabelBase.Parent.Parent.Parent.Parent:FindFirstChild("Purchases")
+                    if touchPart then
+                        touchPart = touchPart:FindFirstChild("PlotBlock")
+                        if touchPart then
+                            touchPart = touchPart:FindFirstChild("Main")
+                            if touchPart and touchPart:FindFirstChild("BillboardGui") then
+                                local remainingTimeText = touchPart.BillboardGui:FindFirstChild("RemainingTime")
+                                if remainingTimeText and remainingTimeText:IsA("TextLabel") then
+                                    lockedEspGuis[player].TextLabel.Text = "Locked: " .. remainingTimeText.Text
+                                else
+                                    lockedEspGuis[player].TextLabel.Text = "Locked: No Timer"
+                                end
+                            else
+                                lockedEspGuis[player].TextLabel.Text = "Locked: No BillboardGui"
+                            end
+                        else
+                            lockedEspGuis[player].TextLabel.Text = "Locked: No PlotBlock"
+                        end
+                    else
+                        lockedEspGuis[player].TextLabel.Text = "Locked: No Purchases"
+                    end
+                else
+                    lockedEspGuis[player].TextLabel.Text = "Locked: No Base Found"
+                end
+                task.wait(0.1)
+            end
+        end)
+    end
+end
+
+local function removeLockedEsp(player)
+    if lockedEspGuis[player] then
+        lockedEspGuis[player]:Destroy()
+        lockedEspGuis[player] = nil
     end
 end
 
@@ -138,6 +238,45 @@ local WalkSpeedValue = 16
 local JumpPowerValue = 50
 local GravityScale = 1
 local AutoSpin = false
+
+-- WalkSpeed Slider
+MainTab:AddSlider({
+    Name = "WalkSpeed",
+    Min = 0,
+    Max = 100,
+    Default = 16,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    Callback = function(Value)
+        WalkSpeedValue = Value
+    end
+})
+
+-- JumpPower Slider
+MainTab:AddSlider({
+    Name = "JumpPower",
+    Min = 0,
+    Max = 200,
+    Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    Callback = function(Value)
+        JumpPowerValue = Value
+    end
+})
+
+-- Gravity Scale Slider
+MainTab:AddSlider({
+    Name = "Gravity Scale",
+    Min = 0,
+    Max = 5,
+    Default = 1,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 0.1,
+    Callback = function(Value)
+        GravityScale = Value
+    end
+})
 
 -- Tween to Base
 MainTab:AddButton({
@@ -246,45 +385,6 @@ MainTab:AddButton({
                 Time = 3
             })
         end
-    end
-})
-
--- WalkSpeed Slider
-MainTab:AddSlider({
-    Name = "WalkSpeed",
-    Min = 0,
-    Max = 100,
-    Default = 16,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 1,
-    Callback = function(Value)
-        WalkSpeedValue = Value
-    end
-})
-
--- JumpPower Slider
-MainTab:AddSlider({
-    Name = "JumpPower",
-    Min = 0,
-    Max = 200,
-    Default = 50,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 1,
-    Callback = function(Value)
-        JumpPowerValue = Value
-    end
-})
-
--- Gravity Scale Slider
-MainTab:AddSlider({
-    Name = "Gravity Scale",
-    Min = 0,
-    Max = 5,
-    Default = 1,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 0.1,
-    Callback = function(Value)
-        GravityScale = Value
     end
 })
 
@@ -532,6 +632,25 @@ VisualTab:AddToggle({
     end
 })
 
+VisualTab:AddToggle({
+    Name = "Locked ESP",
+    Default = false,
+    Callback = function(Value)
+        lockedEspEnabled = Value
+        if lockedEspEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.Character then
+                    addLockedEsp(player)
+                end
+            end
+        else
+            for player, gui in pairs(lockedEspGuis) do
+                removeLockedEsp(player)
+            end
+        end
+    end
+})
+
 -- Event Handling for Players
 for _, player in pairs(Players:GetPlayers()) do
     player.CharacterAdded:Connect(function()
@@ -541,10 +660,14 @@ for _, player in pairs(Players:GetPlayers()) do
         if nameEnabled then
             addNameGui(player)
         end
+        if lockedEspEnabled then
+            addLockedEsp(player)
+        end
     end)
     player.CharacterRemoving:Connect(function()
         removeHighlight(player)
         removeNameGui(player)
+        removeLockedEsp(player)
     end)
 end
 
@@ -556,25 +679,22 @@ Players.PlayerAdded:Connect(function(player)
         if nameEnabled then
             addNameGui(player)
         end
+        if lockedEspEnabled then
+            addLockedEsp(player)
+        end
     end)
     player.CharacterRemoving:Connect(function()
         removeHighlight(player)
         removeNameGui(player)
+        removeLockedEsp(player)
     end)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
     removeHighlight(player)
     removeNameGui(player)
+    removeLockedEsp(player)
 end)
-
--- ======= AUTO TAB =======
-local AutoTab = Window:MakeTab({
-    Name = "Auto",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-AutoTab:AddLabel("Auto features will be added here.")
 
 -- ======= MISC TAB =======
 local MiscTab = Window:MakeTab({
