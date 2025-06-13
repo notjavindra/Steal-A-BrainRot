@@ -21,416 +21,139 @@ OrionLib:MakeNotification({
     Time = 5
 })
 
--- ======= MAIN TAB =======
-local MainTab = Window:MakeTab({
-    Name = "Main",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+-- Visuals Tab Enhancements
+local playerHighlights = {}
+local playerNameGuis = {}
+local espEnabled = false
+local nameEnabled = false
 
-local WalkSpeedValue = 16
-local JumpPowerValue = 50
-local GravityScale = 1
-local AutoSpin = false
-
--- Find Base TextLabel
-local function findBaseTextLabel()
-    local playerName = Player.Name
-    local targetText = playerName .. "'s Base"
-    
-    local function searchForTextLabel(parent)
-        for _, descendant in pairs(parent:GetDescendants()) do
-            if descendant:IsA("TextLabel") and descendant.Text == targetText then
-                return descendant
-            end
-        end
-        return nil
+local function addHighlight(player)
+    if player ~= Player and player.Character then
+        local highlight = Instance.new("Highlight")
+        highlight.FillColor = Color3.new(0, 0, 1) -- Blue
+        highlight.OutlineColor = Color3.new(0, 0, 1)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Adornee = player.Character
+        highlight.Parent = player.Character
+        playerHighlights[player] = highlight
     end
-    
-    local textLabel = searchForTextLabel(Workspace)
-    return textLabel
 end
 
--- Tween to Base
-MainTab:AddButton({
-    Name = "Tween to Base",
-    Callback = function()
-        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-            local textLabel = findBaseTextLabel()
-            if textLabel then
-                local basePart = textLabel.Parent.Parent.Parent
-                if basePart:IsA("BasePart") or basePart:IsA("Model") then
-                    local targetCFrame = basePart:IsA("BasePart") and basePart.CFrame + Vector3.new(0, 5, 0) or basePart:GetPrimaryPartCFrame() + Vector3.new(0, 5, 0)
-                    local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                    local tween = TweenService:Create(Player.Character.HumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-                    tween:Play()
-                    OrionLib:MakeNotification({
-                        Name = "Tweening to Base",
-                        Content = "Moving to your base!",
-                        Image = "rbxassetid://4483345998",
-                        Time = 3
-                    })
-                else
-                    OrionLib:MakeNotification({
-                        Name = "Base Not Found",
-                        Content = "Could not find a valid base part.",
-                        Image = "rbxassetid://4483345998",
-                        Time = 3
-                    })
-                end
-            else
-                OrionLib:MakeNotification({
-                    Name = "Base Not Found",
-                    Content = "Could not find TextLabel with '" .. Player.Name .. "'s Base'.",
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
-            end
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Character or HumanoidRootPart not found.",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
+local function removeHighlight(player)
+    if playerHighlights[player] then
+        playerHighlights[player]:Destroy()
+        playerHighlights[player] = nil
     end
-})
+end
 
--- AutoLockBase Button
-MainTab:AddButton({
-    Name = "AutoLockBase",
-    Callback = function()
-        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-            local textLabel = findBaseTextLabel()
-            if textLabel then
-                local touchPart = textLabel.Parent.Parent.Parent.Parent:FindFirstChild("Purchases")
-                if touchPart then
-                    touchPart = touchPart:FindFirstChild("PlotBlock")
-                    if touchPart then
-                        touchPart = touchPart:FindFirstChild("Main")
-                        if touchPart and touchPart:IsA("BasePart") then
-                            local targetCFrame = touchPart.CFrame + Vector3.new(0, 5, 0)
-                            Player.Character.HumanoidRootPart.CFrame = targetCFrame
-                            OrionLib:MakeNotification({
-                                Name = "Teleported to Lock Part",
-                                Content = "Teleported to Main part for base lock.",
-                                Image = "rbxassetid://4483345998",
-                                Time = 3
-                            })
-                        else
-                            OrionLib:MakeNotification({
-                                Name = "Touch Part Not Found",
-                                Content = "Main part not found in PlotBlock.",
-                                Image = "rbxassetid://4483345998",
-                                Time = 3
-                            })
-                        end
-                    else
-                        OrionLib:MakeNotification({
-                            Name = "PlotBlock Not Found",
-                            Content = "PlotBlock not found in Purchases.",
-                            Image = "rbxassetid://4483345998",
-                            Time = 3
-                        })
-                    end
-                else
-                    OrionLib:MakeNotification({
-                        Name = "Purchases Not Found",
-                        Content = "Purchases not found in base hierarchy.",
-                        Image = "rbxassetid://4483345998",
-                        Time = 3
-                    })
-                end
-            else
-                OrionLib:MakeNotification({
-                    Name = "Base Not Found",
-                    Content = "Could not find TextLabel with '" .. Player.Name .. "'s Base'.",
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
-            end
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Character or HumanoidRootPart not found.",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
+local function addNameGui(player)
+    if player ~= Player and player.Character then
+        local head = player.Character:WaitForChild("Head")
+        local billboard = Instance.new("BillboardGui")
+        billboard.AlwaysOnTop = true
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.Adornee = head
+        local textLabel = Instance.new("TextLabel", billboard)
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = player.Name
+        textLabel.TextColor3 = Color3.new(1, 1, 1)
+        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+        textLabel.TextStrokeTransparency = 0
+        textLabel.TextScaled = true
+        billboard.Parent = head
+        playerNameGuis[player] = billboard
     end
-})
+end
 
--- WalkSpeed Slider
-MainTab:AddSlider({
-    Name = "WalkSpeed",
-    Min = 0,
-    Max = 100,
-    Default = 16,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 1,
-    Callback = function(Value)
-        WalkSpeedValue = Value
+local function removeNameGui(player)
+    if playerNameGuis[player] then
+        playerNameGuis[player]:Destroy()
+        playerNameGuis[player] = nil
     end
-})
+end
 
--- JumpPower Slider
-MainTab:AddSlider({
-    Name = "JumpPower",
-    Min = 0,
-    Max = 200,
-    Default = 50,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 1,
-    Callback = function(Value)
-        JumpPowerValue = Value
-    end
-})
-
--- Gravity Scale Slider
-MainTab:AddSlider({
-    Name = "Gravity Scale",
-    Min = 0,
-    Max = 5,
-    Default = 1,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 0.1,
-    Callback = function(Value)
-        GravityScale = Value
-    end
-})
-
--- Reset Character Button
-MainTab:AddButton({
-    Name = "Reset Character",
-    Callback = function()
-        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-            Player.Character:FindFirstChildOfClass("Humanoid").Health = 0
-            OrionLib:MakeNotification({
-                Name = "Character Reset",
-                Content = "Your character has been reset.",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Character or Humanoid not found.",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
-    end
-})
-
--- Auto Spin
-MainTab:AddToggle({
-    Name = "Auto Spin",
-    Default = false,
-    Callback = function(Value)
-        AutoSpin = Value
-        if AutoSpin then
-            spawn(function()
-                while AutoSpin do
-                    local success, response = pcall(function()
-                        return game.ReplicatedStorage.Remotes.Spin:InvokeServer()
-                    end)
-                    if not success then
-                        OrionLib:MakeNotification({
-                            Name = "Spin Failed",
-                            Content = "Error: " .. tostring(response),
-                            Image = "rbxassetid://4483345998",
-                            Time = 3
-                        })
-                    end
-                    task.wait(1)
-                end
-            end)
-        end
-    end
-})
-
--- Looped updates: Speed, Jump, Gravity
-RunService.RenderStepped:Connect(function()
-    if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-        local Humanoid = Player.Character.Humanoid
-        Humanoid.WalkSpeed = WalkSpeedValue
-        Humanoid.JumpPower = JumpPowerValue
-        game.Workspace.Gravity = 196.2 * GravityScale
-    end
-end)
-
--- ======= COMBAT TAB =======
-local CombatTab = Window:MakeTab({
-    Name = "Combat",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local SlapSpeed = 0.1
-local AutoSlap = false
-
--- Supported slap tools
-local slapTools = {
-    "Tung Bat",
-    "Blackhole Slap",
-    "Dark Matter Slap",
-    "Dev Slap",
-    "Devil Slap",
-    "Diamond Slap",
-    "Emerald Slap",
-    "Flame Slap",
-    "Gold Slap",
-    "Iron Slap",
-    "Nuclear Slap",
-    "Ruby Slap",
-    "Slap"
-}
-
-CombatTab:AddTextbox({
-    Name = "Slap Speed",
-    Default = "0.1",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number and number > 0 then
-            SlapSpeed = number
-            OrionLib:MakeNotification({
-                Name = "Slap Speed Updated",
-                Content = "Set to " .. number .. " seconds",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        else
-            OrionLib:MakeNotification({
-                Name = "Invalid Input",
-                Content = "Please enter a positive number",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
-    end
-})
-
-CombatTab:AddToggle({
-    Name = "Auto-Slap",
-    Default = false,
-    Callback = function(Value)
-        AutoSlap = Value
-        OrionLib:MakeNotification({
-            Name = "Auto-Slap",
-            Content = "Auto-Slap " .. (Value and "enabled" or "disabled"),
-            Image = "rbxassetid://4483345998",
-            Time = 3
-        })
-    end
-})
-
--- Auto-Slap Logic
-task.spawn(function()
-    while true do
-        if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChildOfClass("Humanoid") then
-            local myRoot = Player.Character.HumanoidRootPart
-            local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
-            local foundTarget = false
-            
-            -- Check for nearby players
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                    local theirRoot = plr.Character.HumanoidRootPart
-                    local dist = (myRoot.Position - theirRoot.Position).Magnitude
-                    
-                    -- Fixed proximity check (10 studs)
-                    if dist <= 10 then
-                        foundTarget = true
-                        local toolFound = false
-                        
-                        -- Check for any supported slap tool
-                        for _, toolName in pairs(slapTools) do
-                            local tool = Player.Backpack:FindFirstChild(toolName) or Player.Character:FindFirstChild(toolName)
-                            if tool then
-                                toolFound = true
-                                -- Equip the tool if not already equipped
-                                if not Player.Character:FindFirstChild(toolName) then
-                                    humanoid:EquipTool(tool)
-                                    task.wait(0.1) -- Wait for tool to equip
-                                end
-                                
-                                -- Activate the tool
-                                if tool:IsA("Tool") and tool.Parent == Player.Character then
-                                    local success, err = pcall(function()
-                                        tool:Activate()
-                                    end)
-                                    if not success then
-                                        OrionLib:MakeNotification({
-                                            Name = "Tool Activation Failed",
-                                            Content = "Error: " .. tostring(err),
-                                            Image = "rbxassetid://4483345998",
-                                            Time = 3
-                                        })
-                                    end
-                                end
-                                break -- Use the first available tool
-                            end
-                        end
-                        
-                        if not toolFound then
-                            OrionLib:MakeNotification({
-                                Name = "Tool Not Found",
-                                Content = "No supported slap tool (e.g., Tung Bat, Blackhole Slap) found in Backpack or Character.",
-                                Image = "rbxassetid://4483345998",
-                                Time = 3
-                            })
-                        end
-                        break -- Exit loop after finding and slapping one target
-                    end
-                end
-            end
-            -- No automatic unequip; player must unequip manually
-        end
-        task.wait(SlapSpeed)
-    end
-end)
-
--- ======= VISUAL TAB =======
+-- Visuals Tab
 local VisualTab = Window:MakeTab({
     Name = "Visual",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-VisualTab:AddLabel("Visual features will be added here.")
 
--- ======= AUTO TAB =======
-local AutoTab = Window:MakeTab({
-    Name = "Auto",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
+VisualTab:AddToggle({
+    Name = "Players ESP",
+    Default = false,
+    Callback = function(Value)
+        espEnabled = Value
+        if espEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.Character then
+                    addHighlight(player)
+                end
+            end
+        else
+            for player, highlight in pairs(playerHighlights) do
+                removeHighlight(player)
+            end
+        end
+    end
 })
-AutoTab:AddLabel("Auto features will be added here.")
 
--- ======= MISC TAB =======
-local MiscTab = Window:MakeTab({
-    Name = "Misc",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
+VisualTab:AddToggle({
+    Name = "Players Name",
+    Default = false,
+    Callback = function(Value)
+        nameEnabled = Value
+        if nameEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player.Character then
+                    addNameGui(player)
+                end
+            end
+        else
+            for player, gui in pairs(playerNameGuis) do
+                removeNameGui(player)
+            end
+        end
+    end
 })
-MiscTab:AddLabel("Miscellaneous features will be added here.")
 
--- ======= SETTINGS TAB =======
-local SettingsTab = Window:MakeTab({
-    Name = "Settings",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-SettingsTab:AddLabel("Settings will be added here.")
+-- Event Handling for Players
+for _, player in pairs(Players:GetPlayers()) do
+    player.CharacterAdded:Connect(function()
+        if espEnabled then
+            addHighlight(player)
+        end
+        if nameEnabled then
+            addNameGui(player)
+        end
+    end)
+    player.CharacterRemoving:Connect(function()
+        removeHighlight(player)
+        removeNameGui(player)
+    end)
+end
 
--- ======= CREDITS TAB =======
-local CreditsTab = Window:MakeTab({
-    Name = "Credits",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-CreditsTab:AddLabel("Script created by Jeetendra.")
-CreditsTab:AddLabel("Powered by OrionLib.")
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        if espEnabled then
+            addHighlight(player)
+        end
+        if nameEnabled then
+            addNameGui(player)
+        end
+    end)
+    player.CharacterRemoving:Connect(function()
+        removeHighlight(player)
+        removeNameGui(player)
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    removeHighlight(player)
+    removeNameGui(player)
+end)
 
 OrionLib:Init()
