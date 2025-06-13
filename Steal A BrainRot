@@ -386,8 +386,8 @@ task.spawn(function()
                     end
                 end
             end
-            
-            
+            -- No automatic unequip; player must unequip manually
+        end
         task.wait(SlapSpeed)
     end
 end)
