@@ -1,5 +1,7 @@
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/ionlyusegithubformcmods/1-Line-Scripts/main/Mobile%20Friendly%20Orion')))()
 local Player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 -- Create UI Window
 local Window = OrionLib:MakeWindow({
@@ -22,33 +24,6 @@ local MainTab = Window:MakeTab({
     Name = "Main",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
-})
-
-local WalkSpeedValue = 16 -- Default WalkSpeed
-local JumpPowerValue = 50 -- Default JumpPower
-
-MainTab:AddTextbox({
-    Name = "WalkSpeed",
-    Default = "Enter WalkSpeed.",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then
-            WalkSpeedValue = number
-        end
-    end  
-})
-
-MainTab:AddTextbox({
-    Name = "JumpPower",
-    Default = "Enter JumpPower.",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then
-            JumpPowerValue = number
-        end
-    end  
 })
 
 local AutoSpin = false
@@ -79,18 +54,6 @@ MainTab:AddToggle({
     end
 })
 
--- Apply WalkSpeed and JumpPower constantly
-spawn(function()
-    while true do
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-            local Humanoid = Player.Character.Humanoid
-            Humanoid.WalkSpeed = WalkSpeedValue
-            Humanoid.JumpPower = JumpPowerValue
-        end
-        wait(0.1)
-    end
-end)
-
 -- ======= PLAYER TAB =======
 local PlayerTab = Window:MakeTab({
     Name = "Player",
@@ -98,39 +61,94 @@ local PlayerTab = Window:MakeTab({
     PremiumOnly = false
 })
 
-local Players = game:GetService("Players")
-local SelectedPlayer = nil
-
-local function updatePlayerList()
-    local playerNames = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        table.insert(playerNames, player.Name)
-    end
-    playerDropdown:UpdateDropdown({
-        Name = "Select Player",
-        Options = playerNames
-    })
-end
-
-local playerDropdown = PlayerTab:AddDropdown({
-    Name = "Select Player",
-    Default = nil,
-    Options = {},
+-- WalkSpeed
+local WalkSpeedValue = 16
+PlayerTab:AddTextbox({
+    Name = "WalkSpeed",
+    Default = "16",
+    TextDisappear = true,
     Callback = function(Value)
-        SelectedPlayer = Value
+        local num = tonumber(Value)
+        if num then
+            WalkSpeedValue = num
+        end
     end
 })
 
-PlayerTab:AddButton({
-    Name = "Refresh Player List",
-    Callback = function()
-        updatePlayerList()
+-- JumpPower
+local JumpPowerValue = 50
+PlayerTab:AddTextbox({
+    Name = "JumpPower",
+    Default = "50",
+    TextDisappear = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then
+            JumpPowerValue = num
+        end
     end
 })
 
-updatePlayerList()
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoved:Connect(updatePlayerList)
+-- Gravity Scale
+PlayerTab:AddTextbox({
+    Name = "Gravity Scale",
+    Default = "196.2",
+    TextDisappear = true,
+    Callback = function(Value)
+        local g = tonumber(Value)
+        if g then
+            workspace.Gravity = g
+        end
+    end
+})
+
+-- Infinite Jump
+local infJump = false
+PlayerTab:AddToggle({
+    Name = "Infinite Jump",
+    Default = false,
+    Callback = function(Value)
+        infJump = Value
+    end
+})
+
+UIS.JumpRequest:Connect(function()
+    if infJump and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+        Player.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- No Clip
+local noClip = false
+PlayerTab:AddToggle({
+    Name = "No Clip",
+    Default = false,
+    Callback = function(Value)
+        noClip = Value
+    end
+})
+
+RunService.Stepped:Connect(function()
+    if noClip and Player.Character then
+        for _, part in pairs(Player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Constantly apply WalkSpeed & JumpPower
+spawn(function()
+    while true do
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            local h = Player.Character.Humanoid
+            h.WalkSpeed = WalkSpeedValue
+            h.JumpPower = JumpPowerValue
+        end
+        wait(0.1)
+    end
+end)
 
 -- ======= COMBAT TAB =======
 local CombatTab = Window:MakeTab({
@@ -138,7 +156,6 @@ local CombatTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
 CombatTab:AddLabel("Combat features will be added here.")
 
 -- ======= VISUAL TAB =======
@@ -147,7 +164,6 @@ local VisualTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
 VisualTab:AddLabel("Visual features will be added here.")
 
 -- ======= AUTO TAB =======
@@ -156,7 +172,6 @@ local AutoTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
 AutoTab:AddLabel("Auto features will be added here.")
 
 -- ======= MISC TAB =======
@@ -165,7 +180,6 @@ local MiscTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
 MiscTab:AddLabel("Miscellaneous features will be added here.")
 
 -- ======= SETTINGS TAB =======
@@ -174,7 +188,6 @@ local SettingsTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
 SettingsTab:AddLabel("Settings will be added here.")
 
 -- ======= CREDITS TAB =======
@@ -183,9 +196,8 @@ local CreditsTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-
 CreditsTab:AddLabel("Script created by Jeetendra or your name here.")
 CreditsTab:AddLabel("Powered by OrionLib.")
 
--- Initialize UI
+-- Init UI
 OrionLib:Init()
