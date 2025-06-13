@@ -330,45 +330,66 @@ CombatTab:AddToggle({
 task.spawn(function()
     while true do
         if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChildOfClass("Humanoid") then
+            local myRoot = Player.Character.HumanoidRootPart
             local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
-            local toolFound = false
+            local foundTarget = false
             
-            -- Check for any supported slap tool
-            for _, toolName in pairs(slapTools) do
-                local tool = Player.Backpack:FindFirstChild(toolName) or Player.Character:FindFirstChild(toolName)
-                if tool then
-                    toolFound = true
-                    -- Equip the tool if not already equipped
-                    if not Player.Character:FindFirstChild(toolName) then
-                        humanoid:EquipTool(tool)
-                        task.wait(0.1) -- Wait for tool to equip
-                    end
+            -- Check for nearby players
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local theirRoot = plr.Character.HumanoidRootPart
+                    local dist = (myRoot.Position - theirRoot.Position).Magnitude
                     
-                    -- Activate the tool
-                    if tool:IsA("Tool") and tool.Parent == Player.Character then
-                        local success, err = pcall(function()
-                            tool:Activate()
-                        end)
-                        if not success then
+                    -- Fixed proximity check (10 studs)
+                    if dist <= 10 then
+                        foundTarget = true
+                        local toolFound = false
+                        
+                        -- Check for any supported slap tool
+                        for _, toolName in pairs(slapTools) do
+                            local tool = Player.Backpack:FindFirstChild(toolName) or Player.Character:FindFirstChild(toolName)
+                            if tool then
+                                toolFound = true
+                                -- Equip the tool if not already equipped
+                                if not Player.Character:FindFirstChild(toolName) then
+                                    humanoid:EquipTool(tool)
+                                    task.wait(0.1) -- Wait for tool to equip
+                                end
+                                
+                                -- Activate the tool
+                                if tool:IsA("Tool") and tool.Parent == Player.Character then
+                                    local success, err = pcall(function()
+                                        tool:Activate()
+                                    end)
+                                    if not success then
+                                        OrionLib:MakeNotification({
+                                            Name = "Tool Activation Failed",
+                                            Content = "Error: " .. tostring(err),
+                                            Image = "rbxassetid://4483345998",
+                                            Time = 3
+                                        })
+                                    end
+                                end
+                                break -- Use the first available tool
+                            end
+                        end
+                        
+                        if not toolFound then
                             OrionLib:MakeNotification({
-                                Name = "Tool Activation Failed",
-                                Content = "Error: " .. tostring(err),
+                                Name = "Tool Not Found",
+                                Content = "No supported slap tool (e.g., Tung Bat, Blackhole Slap) found in Backpack or Character.",
                                 Image = "rbxassetid://4483345998",
                                 Time = 3
                             })
                         end
+                        break -- Exit loop after finding and slapping one target
                     end
-                    break -- Use the first available tool
                 end
             end
             
-            if not toolFound then
-                OrionLib:MakeNotification({
-                    Name = "Tool Not Found",
-                    Content = "No supported slap tool (e.g., Tung Bat, Blackhole Slap) found in Backpack or Character.",
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
+            -- Unequip tool if no target is found
+            if not foundTarget and Player.Character:FindFirstChildWhichIsA("Tool") then
+                humanoid:UnequipTools()
             end
         end
         task.wait(SlapSpeed)
