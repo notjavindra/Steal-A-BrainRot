@@ -5,6 +5,8 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local UIS = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 
 local Window = OrionLib:MakeWindow({
     Name = "Steal A BrainRot",
@@ -580,7 +582,128 @@ local MiscTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-MiscTab:AddLabel("Miscellaneous features will be added here.")
+
+local antiAFK = false
+local fpsBoost = false
+
+-- Auto Rejoin Button
+MiscTab:AddButton({
+    Name = "Auto Rejoin",
+    Callback = function()
+        local success, err = pcall(function()
+            TeleportService:Teleport(game.PlaceId, Player)
+        end)
+        if success then
+            OrionLib:MakeNotification({
+                Name = "Rejoin",
+                Content = "Attempting to rejoin the server...",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Rejoin Failed",
+                Content = "Error: " .. tostring(err),
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+-- Anti-AFK Toggle
+MiscTab:AddToggle({
+    Name = "Anti-AFK",
+    Default = false,
+    Callback = function(Value)
+        antiAFK = Value
+        if antiAFK then
+            spawn(function()
+                while antiAFK do
+                    task.wait(30) -- Simulate input every 30 seconds
+                    local virtualUser = game:GetService("VirtualUser")
+                    virtualUser:CaptureController()
+                    virtualUser:ClickButton2(Vector2.new())
+                end
+            end)
+            OrionLib:MakeNotification({
+                Name = "Anti-AFK",
+                Content = "Anti-AFK enabled",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Anti-AFK",
+                Content = "Anti-AFK disabled",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+-- Server Hop Button
+MiscTab:AddButton({
+    Name = "Server Hop",
+    Callback = function()
+        local servers = {}
+        local req = HttpService:GetAsync("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        local data = HttpService:JSONDecode(req)
+        for _, server in pairs(data.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                table.insert(servers, server.id)
+            end
+        end
+        if #servers > 0 then
+            local randomServer = servers[math.random(1, #servers)]
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, randomServer, Player)
+            OrionLib:MakeNotification({
+                Name = "Server Hop",
+                Content = "Hopping to a new server...",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Server Hop Failed",
+                Content = "No available servers found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+-- FPS Booster Toggle
+MiscTab:AddToggle({
+    Name = "FPS Booster",
+    Default = false,
+    Callback = function(Value)
+        fpsBoost = Value
+        if fpsBoost then
+            settings().Rendering.QualityLevel = 1 -- Lowest quality
+            game:GetService("Lighting").GlobalShadows = false
+            game:GetService("Lighting").FogEnd = 9e9
+            OrionLib:MakeNotification({
+                Name = "FPS Booster",
+                Content = "FPS Booster enabled",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            settings().Rendering.QualityLevel = 6 -- Reset to default
+            game:GetService("Lighting").GlobalShadows = true
+            game:GetService("Lighting").FogEnd = 100000
+            OrionLib:MakeNotification({
+                Name = "FPS Booster",
+                Content = "FPS Booster disabled",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
 
 -- ======= SETTINGS TAB =======
 local SettingsTab = Window:MakeTab({
