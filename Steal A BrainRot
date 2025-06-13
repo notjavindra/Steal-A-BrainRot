@@ -26,6 +26,8 @@ local playerHighlights = {}
 local playerNameGuis = {}
 local espEnabled = false
 local nameEnabled = false
+local baseLockEnabled = false
+local baseLockGui = nil
 
 local function addHighlight(player)
     if player ~= Player and player.Character then
@@ -75,19 +77,6 @@ local function removeNameGui(player)
     end
 end
 
--- ======= MAIN TAB =======
-local MainTab = Window:MakeTab({
-    Name = "Main",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local WalkSpeedValue = 16
-local JumpPowerValue = 50
-local GravityScale = 1
-local AutoSpin = false
-
--- Find Base TextLabel
 local function findBaseTextLabel()
     local playerName = Player.Name
     local targetText = playerName .. "'s Base"
@@ -104,6 +93,49 @@ local function findBaseTextLabel()
     local textLabel = searchForTextLabel(Workspace)
     return textLabel
 end
+
+local function updateBaseLockVisual()
+    if baseLockEnabled and baseLockGui then
+        local textLabel = findBaseTextLabel()
+        if textLabel then
+            local touchPart = textLabel.Parent.Parent.Parent.Parent:FindFirstChild("Purchases")
+            if touchPart then
+                touchPart = touchPart:FindFirstChild("PlotBlock")
+                if touchPart then
+                    touchPart = touchPart:FindFirstChild("Main")
+                    if touchPart and touchPart:FindFirstChild("BillboardGui") then
+                        local remainingTimeText = touchPart.BillboardGui:FindFirstChild("RemainingTime")
+                        if remainingTimeText and remainingTimeText:IsA("TextLabel") then
+                            baseLockGui.TextLabel.Text = remainingTimeText.Text
+                        else
+                            baseLockGui.TextLabel.Text = "No Remaining Time"
+                        end
+                    else
+                        baseLockGui.TextLabel.Text = "No BillboardGui"
+                    end
+                else
+                    baseLockGui.TextLabel.Text = "No PlotBlock"
+                end
+            else
+                baseLockGui.TextLabel.Text = "No Purchases"
+            end
+        else
+            baseLockGui.TextLabel.Text = "No Base Found"
+        end
+    end
+end
+
+-- ======= MAIN TAB =======
+local MainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local WalkSpeedValue = 16
+local JumpPowerValue = 50
+local GravityScale = 1
+local AutoSpin = false
 
 -- Tween to Base
 MainTab:AddButton({
@@ -462,6 +494,38 @@ VisualTab:AddToggle({
             for player, gui in pairs(playerNameGuis) do
                 removeNameGui(player)
             end
+        end
+    end
+})
+
+VisualTab:AddToggle({
+    Name = "BaseLockVisual",
+    Default = false,
+    Callback = function(Value)
+        baseLockEnabled = Value
+        if baseLockEnabled and not baseLockGui then
+            local screenGui = Instance.new("ScreenGui")
+            local textLabel = Instance.new("TextLabel")
+            screenGui.Parent = Player:WaitForChild("PlayerGui")
+            textLabel.Parent = screenGui
+            textLabel.Size = UDim2.new(0, 150, 0, 50)
+            textLabel.Position = UDim2.new(0, 10, 1, -60)
+            textLabel.BackgroundTransparency = 0.5
+            textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+            textLabel.TextColor3 = Color3.new(1, 1, 1)
+            textLabel.TextScaled = true
+            textLabel.Text = "Loading..."
+            baseLockGui = screenGui
+
+            spawn(function()
+                while baseLockEnabled do
+                    updateBaseLockVisual()
+                    task.wait(0.1)
+                end
+            end)
+        elseif not baseLockEnabled and baseLockGui then
+            baseLockGui:Destroy()
+            baseLockGui = nil
         end
     end
 })
