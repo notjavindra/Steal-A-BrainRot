@@ -268,6 +268,7 @@ local CombatTab = Window:MakeTab({
 })
 
 local SlapSpeed = 0.1
+local SlapRadius = 10
 local AutoSlap = false
 
 CombatTab:AddTextbox({
@@ -281,6 +282,31 @@ CombatTab:AddTextbox({
             OrionLib:MakeNotification({
                 Name = "Slap Speed Updated",
                 Content = "Set to " .. number .. " seconds",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Invalid Input",
+                Content = "Please enter a positive number",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+CombatTab:AddTextbox({
+    Name = "Slap Radius",
+    Default = "10",
+    TextDisappear = true,
+    Callback = function(Value)
+        local number = tonumber(Value)
+        if number and number > 0 then
+            SlapRadius = number
+            OrionLib:MakeNotification({
+                Name = "Slap Radius Updated",
+                Content = "Set to " .. number .. " studs",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
@@ -313,37 +339,58 @@ CombatTab:AddToggle({
 task.spawn(function()
     while true do
         if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChildOfClass("Humanoid") then
+            local myRoot = Player.Character.HumanoidRootPart
             local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
-            local tool = Player.Backpack:FindFirstChild("Tung Bat") or Player.Character:FindFirstChild("Tung Bat")
             
-            if tool then
-                -- Equip the tool if not already equipped
-                if not Player.Character:FindFirstChild("Tung Bat") then
-                    humanoid:EquipTool(tool)
-                    task.wait(0.1) -- Wait for tool to equip
-                end
-                
-                -- Activate the tool
-                if tool:IsA("Tool") and tool.Parent == Player.Character then
-                    local success, err = pcall(function()
-                        tool:Activate()
-                    end)
-                    if not success then
-                        OrionLib:MakeNotification({
-                            Name = "Tool Activation Failed",
-                            Content = "Error: " .. tostring(err),
-                            Image = "rbxassetid://4483345998",
-                            Time = 3
-                        })
+            -- Check for nearby players
+            local foundTarget = false
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChildOfClass("Humanoid") then
+                    local theirRoot = plr.Character.HumanoidRootPart
+                    local dist = (myRoot.Position - theirRoot.Position).Magnitude
+                    
+                    -- If player is within slap radius
+                    if dist <= SlapRadius then
+                        foundTarget = true
+                        local tool = Player.Backpack:FindFirstChild("Tung Bat") or Player.Character:FindFirstChild("Tung Bat")
+                        
+                        if tool then
+                            -- Equip the tool if not already equipped
+                            if not Player.Character:FindFirstChild("Tung Bat") then
+                                humanoid:EquipTool(tool)
+                                task.wait(0.1) -- Wait for tool to equip
+                            end
+                            
+                            -- Activate the tool
+                            if tool:IsA("Tool") and tool.Parent == Player.Character then
+                                local success, err = pcall(function()
+                                    tool:Activate()
+                                end)
+                                if not success then
+                                    OrionLib:MakeNotification({
+                                        Name = "Tool Activation Failed",
+                                        Content = "Error: " .. tostring(err),
+                                        Image = "rbxassetid://4483345998",
+                                        Time = 3
+                                    })
+                                end
+                            end
+                        else
+                            OrionLib:MakeNotification({
+                                Name = "Tool Not Found",
+                                Content = "Tung Bat not found in Backpack or Character.",
+                                Image = "rbxassetid://4483345998",
+                                Time = 3
+                            })
+                        end
+                        break -- Exit loop after finding and slapping one target
                     end
                 end
-            else
-                OrionLib:MakeNotification({
-                    Name = "Tool Not Found",
-                    Content = "Tung Bat not found in Backpack or Character.",
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
+            end
+            
+            -- If no target was found, unequip the tool to prevent unnecessary holding
+            if not foundTarget and Player.Character:FindFirstChild("Tung Bat") then
+                humanoid:UnequipTools()
             end
         end
         task.wait(SlapSpeed)
