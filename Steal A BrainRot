@@ -32,6 +32,7 @@ local WalkSpeedValue = 16
 local JumpPowerValue = 50
 local GravityScale = 1
 local AutoSpin = false
+local AutoLockBase = false
 
 -- Tween to Base
 local function findBaseTextLabel()
@@ -158,8 +159,127 @@ MainTab:AddButton({
     end
 })
 
--- Auto Spin (retained from original Main tab)
+-- Auto Spin
+MainTab:AddToggle({
+    Name = "Auto Spin",
+    Default = false,
+    Callback = function(Value)
+        AutoSpin = Value
+        if AutoSpin then
+            spawn(function()
+                while AutoSpin do
+                    local success, response = pcall(function()
+                        return game.ReplicatedStorage.Remotes.Spin:InvokeServer()
+                    end)
+                    if not success then
+                        OrionLib:MakeNotification({
+                            Name = "Spin Failed",
+                            Content = "Error: " .. tostring(response),
+                            Image = "rbxassetid://4483345998",
+                            Time = 3
+                        })
+                    end
+                    task.wait(1)
+                end
+            end)
+        end
+    end
+})
 
+-- AutoLockBase
+MainTab:AddToggle({
+    Name = "AutoLockBase",
+    Default = false,
+    Callback = function(Value)
+        AutoLockBase = Value
+        OrionLib:MakeNotification({
+            Name = "AutoLockBase",
+            Content = "AutoLockBase " .. (Value and "enabled" or "disabled"),
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+        if AutoLockBase then
+            spawn(function()
+                while AutoLockBase do
+                    local textLabel = findBaseTextLabel()
+                    if textLabel then
+                        local touchPart = textLabel.Parent.Parent.Parent.Parent:FindFirstChild("Purchases")
+                        if touchPart then
+                            touchPart = touchPart:FindFirstChild("PlotBlock")
+                            if touchPart then
+                                touchPart = touchPart:FindFirstChild("Main")
+                                if touchPart and touchPart:IsA("BasePart") then
+                                    -- Simulate touch by firing remote events or invoking touch interest
+                                    local success, err = pcall(function()
+                                        for _, descendant in pairs(touchPart:GetDescendants()) do
+                                            if descendant:IsA("RemoteEvent") then
+                                                descendant:FireServer(Player)
+                                            elseif descendant:IsA("RemoteFunction") then
+                                                descendant:InvokeServer(Player)
+                                            end
+                                        end
+                                        -- Check for TouchInterest
+                                        local touchInterest = touchPart:FindFirstChild("TouchInterest")
+                                        if touchInterest then
+                                            local remote = touchInterest:FindFirstChildWhichIsA("RemoteEvent")
+                                            if remote then
+                                                remote:FireServer(Player)
+                                            end
+                                        end
+                                    end)
+                                    if success then
+                                        OrionLib:MakeNotification({
+                                            Name = "Base Locked",
+                                            Content = "Successfully activated touch part.",
+                                            Image = "rbxassetid://4483345998",
+                                            Time = 3
+                                        })
+                                    else
+                                        OrionLib:MakeNotification({
+                                            Name = "Activation Failed",
+                                            Content = "Error: " .. tostring(err),
+                                            Image = "rbxassetid://4483345998",
+                                            Time = 3
+                                        })
+                                    end
+                                else
+                                    OrionLib:MakeNotification({
+                                        Name = "Touch Part Not Found",
+                                        Content = "Main part not found in PlotBlock.",
+                                        Image = "rbxassetid://4483345998",
+                                        Time = 3
+                                    })
+                                end
+                            else
+                                OrionLib:MakeNotification({
+                                    Name = "PlotBlock Not Found",
+                                    Content = "PlotBlock not found in Purchases.",
+                                    Image = "rbxassetid://4483345998",
+                                    Time = 3
+                                })
+                            end
+                        else
+                            OrionLib:MakeNotification({
+                                Name = "Purchases Not Found",
+                                Content = "Purchases not found in base hierarchy.",
+                                Image = "rbxassetid://4483345998",
+                                Time = 3
+                            })
+                        end
+                    else
+                        OrionLib:MakeNotification({
+                            Name = "Base Not Found",
+                            Content = "Could not find TextLabel with '" .. Player.Name .. "'s Base'.",
+                            Image = "rbxassetid://4483345998",
+                            Time = 3
+                        })
+                    end
+                    task.wait(1) -- Wait 61 seconds before next activation
+                end
+            end)
+        end
+    end
+})
 
 -- Looped updates: Speed, Jump, Gravity
 RunService.RenderStepped:Connect(function()
