@@ -1,9 +1,10 @@
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/ionlyusegithubformcmods/1-Line-Scripts/main/Mobile%20Friendly%20Orion')))()
 local Player = game.Players.LocalPlayer
-local Mouse = Player:GetMouse()
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
 
 local Window = OrionLib:MakeWindow({
     Name = "Steal A BrainRot",
@@ -29,85 +30,136 @@ local MainTab = Window:MakeTab({
 
 local WalkSpeedValue = 16
 local JumpPowerValue = 50
+local GravityScale = 1
 local AutoSpin = false
 
-MainTab:AddTextbox({
-    Name = "WalkSpeed",
-    Default = "16",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then WalkSpeedValue = number end
-    end  
-})
+-- Tween to Base
+local function findBaseTextLabel()
+    local playerName = Player.Name
+    local targetText = playerName .. "'s Base"
+    
+    local function searchForTextLabel(parent)
+        for _, descendant in pairs(parent:GetDescendants()) do
+            if descendant:IsA("TextLabel") and descendant.Text == targetText then
+                return descendant
+            end
+        end
+        return nil
+    end
+    
+    local textLabel = searchForTextLabel(Workspace)
+    return textLabel
+end
 
-MainTab:AddTextbox({
-    Name = "JumpPower",
-    Default = "50",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then JumpPowerValue = number end
-    end  
-})
-
-
--- ======= PLAYER TAB =======
-local PlayerTab = Window:MakeTab({
-    Name = "Player",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local GravityScale = 1
-local InfiniteJump = false
-local NoClip = false
-
-PlayerTab:AddTextbox({
-    Name = "WalkSpeed",
-    Default = "16",
-    TextDisappear = true,
-    Callback = function(Value)
-        local number = tonumber(Value)
-        if number then WalkSpeedValue = number end
+MainTab:AddButton({
+    Name = "Tween to Base",
+    Callback = function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            local textLabel = findBaseTextLabel()
+            if textLabel then
+                local basePart = textLabel.Parent.Parent.Parent
+                if basePart:IsA("BasePart") or basePart:IsA("Model") then
+                    local targetCFrame = basePart:IsA("BasePart") and basePart.CFrame + Vector3.new(0, 5, 0) or basePart:GetPrimaryPartCFrame() + Vector3.new(0, 5, 0)
+                    local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                    local tween = TweenService:Create(Player.Character.HumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+                    tween:Play()
+                    OrionLib:MakeNotification({
+                        Name = "Tweening to Base",
+                        Content = "Moving to your base!",
+                        Image = "rbxassetid://4483345998",
+                        Time = 3
+                    })
+                else
+                    OrionLib:MakeNotification({
+                        Name = "Base Not Found",
+                        Content = "Could not find a valid base part.",
+                        Image = "rbxassetid://4483345998",
+                        Time = 3
+                    })
+                end
+            else
+                OrionLib:MakeNotification({
+                    Name = "Base Not Found",
+                    Content = "Could not find TextLabel with '" .. Player.Name .. "'s Base'.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            end
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "Character or HumanoidRootPart not found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
-PlayerTab:AddTextbox({
-    Name = "JumpPower",
-    Default = "50",
-    TextDisappear = true,
+-- WalkSpeed Slider
+MainTab:AddSlider({
+    Name = "WalkSpeed",
+    Min = 0,
+    Max = 100,
+    Default = 16,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
     Callback = function(Value)
-        local number = tonumber(Value)
-        if number then JumpPowerValue = number end
+        WalkSpeedValue = Value
     end
 })
 
-PlayerTab:AddTextbox({
+-- JumpPower Slider
+MainTab:AddSlider({
+    Name = "JumpPower",
+    Min = 0,
+    Max = 200,
+    Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    Callback = function(Value)
+        JumpPowerValue = Value
+    end
+})
+
+-- Gravity Scale Slider
+MainTab:AddSlider({
     Name = "Gravity Scale",
-    Default = "1",
-    TextDisappear = true,
+    Min = 0,
+    Max = 5,
+    Default = 1,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 0.1,
     Callback = function(Value)
-        local number = tonumber(Value)
-        if number then GravityScale = number end
+        GravityScale = Value
     end
 })
 
-PlayerTab:AddToggle({
-    Name = "Infinite Jump",
-    Default = false,
-    Callback = function(Value)
-        InfiniteJump = Value
+-- Reset Character Button
+MainTab:AddButton({
+    Name = "Reset Character",
+    Callback = function()
+        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+            Player.Character:FindFirstChildOfClass("Humanoid").Health = 0
+            OrionLib:MakeNotification({
+                Name = "Character Reset",
+                Content = "Your character has been reset.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "Character or Humanoid not found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
-PlayerTab:AddToggle({
-    Name = "No Clip",
-    Default = false,
-    Callback = function(Value)
-        NoClip = Value
-    end
-})
+-- Auto Spin (retained from original Main tab)
+
 
 -- Looped updates: Speed, Jump, Gravity
 RunService.RenderStepped:Connect(function()
@@ -116,21 +168,6 @@ RunService.RenderStepped:Connect(function()
         Humanoid.WalkSpeed = WalkSpeedValue
         Humanoid.JumpPower = JumpPowerValue
         game.Workspace.Gravity = 196.2 * GravityScale
-    end
-
-    if NoClip and Player.Character then
-        for _, v in pairs(Player.Character:GetDescendants()) do
-            if v:IsA("BasePart") and v.CanCollide then
-                v.CanCollide = false
-            end
-        end
-    end
-end)
-
--- Infinite Jump logic
-UIS.JumpRequest:Connect(function()
-    if InfiniteJump and Player.Character and Player.Character:FindFirstChild("Humanoid") then
-        Player.Character:FindFirstChild("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
