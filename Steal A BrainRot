@@ -196,7 +196,7 @@ CombatTab:AddTextbox({
 })
 
 CombatTab:AddToggle({
-    Name = "Auto-Slap",
+    Name = "Auto-Slape",
     Default = false,
     Callback = function(Value)
         AutoSlap = Value
