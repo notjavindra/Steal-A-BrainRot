@@ -806,7 +806,59 @@ local SettingsTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-SettingsTab:AddLabel("Settings will be added here.")
+
+SettingsTab:AddButton({
+    Name = "Save Settings",
+    Callback = function()
+        OrionLib:SaveConfig()
+        OrionLib:MakeNotification({
+            Name = "Settings Saved",
+            Content = "Settings have been saved successfully!",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+SettingsTab:AddButton({
+    Name = "Load Settings",
+    Callback = function()
+        OrionLib:LoadConfig()
+        OrionLib:MakeNotification({
+            Name = "Settings Loaded",
+            Content = "Settings have been loaded successfully!",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
+
+SettingsTab:AddButton({
+    Name = "Reset to Default",
+    Callback = function()
+        -- Reset Toggles
+        espEnabled = false
+        nameEnabled = false
+        baseLockEnabled = false
+        AutoSlap = false
+        antiAFK = false
+        fpsBoost = false
+        spinBot = false
+
+        -- Reset Sliders
+        WalkSpeedValue = 16
+        JumpPowerValue = 50
+        GravityScale = 1
+
+        -- Update UI and notify
+        OrionLib:MakeNotification({
+            Name = "Settings Reset",
+            Content = "All settings have been reset to default!",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+    end
+})
 
 -- ======= CREDITS TAB =======
 local CreditsTab = Window:MakeTab({
