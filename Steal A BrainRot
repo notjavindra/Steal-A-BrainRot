@@ -17,8 +17,24 @@ local setclipboard = setclipboard or function(text) -- Compatibility for clipboa
     end
 end
 
+-- Copy Discord link and open on script start
+setclipboard("https://discord.gg/WA2XTGMM")
+spawn(function()
+    if syn and syn.request then
+        syn.request({Url = "http://www.roblox.com/games/place?id=" .. game.PlaceId .. "&linkId=" .. HttpService:GenerateGUID(false), Method = "GET"})
+    else
+        game:HttpGet("https://discord.gg/WA2XTGMM")
+    end
+end)
+OrionLib:MakeNotification({
+    Name = "Discord Link",
+    Content = "Discord link copied to clipboard and opened!",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
 local Window = OrionLib:MakeWindow({
-    Name = "Steal A BrainRot",
+    Name = "Steal A BrainRot (beta)",
     HidePremium = false,
     SaveConfig = true,
     ConfigFolder = "OrionTest",
