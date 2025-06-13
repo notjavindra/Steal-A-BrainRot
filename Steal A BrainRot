@@ -160,6 +160,7 @@ UIS.JumpRequest:Connect(function()
 end)
 
 -- ======= COMBAT TAB =======
+-- ======= COMBAT TAB =======
 local CombatTab = Window:MakeTab({
     Name = "Combat",
     Icon = "rbxassetid://4483345998",
@@ -175,7 +176,22 @@ CombatTab:AddTextbox({
     TextDisappear = true,
     Callback = function(Value)
         local number = tonumber(Value)
-        if number then SlapRadius = number end
+        if number then
+            SlapRadius = number
+            OrionLib:MakeNotification({
+                Name = "Slap Radius Updated",
+                Content = "Set to " .. number .. " studs",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Invalid Input",
+                Content = "Please enter a valid number",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
@@ -184,31 +200,70 @@ CombatTab:AddToggle({
     Default = false,
     Callback = function(Value)
         AutoSlap = Value
+        if AutoSlap then
+            OrionLib:MakeNotification({
+                Name = "Auto-Slap",
+                Content = "Auto-Slap " .. (Value and "enabled" or "disabled"),
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
+-- Auto-Slap Logic
 task.spawn(function()
     while true do
-        if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        if AutoSlap and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChildOfClass("Humanoid") then
             local myRoot = Player.Character.HumanoidRootPart
+            local humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+            
+            -- Check for nearby players
             for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChildOfClass("Humanoid") then
                     local theirRoot = plr.Character.HumanoidRootPart
                     local dist = (myRoot.Position - theirRoot.Position).Magnitude
+                    
+                    -- If player is within slap radius
                     if dist <= SlapRadius then
-                        local tool = Player.Backpack:FindFirstChild("Tung Bat")
+                        local tool = Player.Backpack:FindFirstChild("Tung Bat") or Player.Character:FindFirstChild("Tung Bat")
+                        
                         if tool then
-                            Player.Character:FindFirstChildOfClass("Humanoid"):EquipTool(tool)
-                            mouse1click()
+                            -- Equip the tool if not already equipped
+                            if not Player.Character:FindFirstChild("Tung Bat") then
+                                humanoid:EquipTool(tool)
+                                task.wait(0.1) -- Wait for tool to equip
+                            end
+                            
+                            -- Activate the tool
+                            if tool:IsA("Tool") and tool.Parent == Player.Character then
+                                local success, err = pcall(function()
+                                    tool:Activate()
+                                end)
+                                if not success then
+                                    OrionLib:MakeNotification({
+                                        Name = "Tool Activation Failed",
+                                        Content = "Error: " .. tostring(err),
+                                        Image = "rbxassetid://4483345998",
+                                        Time = 3
+                                    })
+                                end
+                            end
+                        else
+                            OrionLib:MakeNotification({
+                                Name = "Tool Not Found",
+                                Content = "Tung Bat not found in Backpack",
+                                Image = "rbxassetid://4483345998",
+                                Time = 3
+                            })
                         end
                     end
                 end
             end
         end
-        task.wait(0.1)
+        task.wait(0.1) -- Adjust wait time to prevent lag
     end
 end)
-
 -- ======= VISUAL TAB =======
 local VisualTab = Window:MakeTab({
     Name = "Visual",
