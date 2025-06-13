@@ -128,70 +128,6 @@ PlayerTab:AddButton({
     end
 })
 
-PlayerTab:AddButton({
-    Name = "Kill Player",
-    Callback = function()
-        if SelectedPlayer then
-            local RemoteFunction = game.ReplicatedStorage.Remotes:FindFirstChild("Kill")
-            if RemoteFunction and RemoteFunction:IsA("RemoteFunction") then
-                RemoteFunction:InvokeServer(Players[SelectedPlayer])
-                OrionLib:MakeNotification({
-                    Name = "Success",
-                    Content = "Killed " .. SelectedPlayer,
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
-            else
-                OrionLib:MakeNotification({
-                    Name = "Error",
-                    Content = "Kill function not found!",
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
-            end
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "No player selected!",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
-    end
-})
-
-PlayerTab:AddButton({
-    Name = "Kick Player",
-    Callback = function()
-        if SelectedPlayer then
-            local RemoteFunction = game.ReplicatedStorage.Remotes:FindFirstChild("Kick")
-            if RemoteFunction and RemoteFunction:IsA("RemoteFunction") then
-                RemoteFunction:InvokeServer(Players[SelectedPlayer])
-                OrionLib:MakeNotification({
-                    Name = "Success",
-                    Content = "Kicked " .. SelectedPlayer,
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
-            else
-                OrionLib:MakeNotification({
-                    Name = "Error",
-                    Content = "Kick function not found!",
-                    Image = "rbxassetid://4483345998",
-                    Time = 3
-                })
-            end
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "No player selected!",
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
-    end
-})
-
 updatePlayerList()
 Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoved:Connect(updatePlayerList)
@@ -203,7 +139,6 @@ local CombatTab = Window:MakeTab({
     PremiumOnly = false
 })
 
--- Placeholder for Combat tab content
 CombatTab:AddLabel("Combat features will be added here.")
 
 -- ======= VISUAL TAB =======
@@ -213,7 +148,6 @@ local VisualTab = Window:MakeTab({
     PremiumOnly = false
 })
 
--- Placeholder for Visual tab content
 VisualTab:AddLabel("Visual features will be added here.")
 
 -- ======= AUTO TAB =======
@@ -223,54 +157,7 @@ local AutoTab = Window:MakeTab({
     PremiumOnly = false
 })
 
-AutoTab:AddButton({
-    Name = "Auto Redeem Codes",
-    Callback = function()
-        local Codes = { -- Add your codes here
-            "CODE1",
-            "CODE2",
-            "CODE3",
-        }
-        local ScreenGui = Player.PlayerGui:FindFirstChild("ScreenGui")
-        if ScreenGui and ScreenGui:FindFirstChild("Codes") then
-            local CodesUI = ScreenGui.Codes.Main
-            local InputBox = CodesUI.Input.TextBox
-            local RedeemButton = CodesUI.Redeem.TextButton
-            
-            for _, code in ipairs(Codes) do
-                InputBox.Text = code
-                wait(0.5)
-                
-                for _, connection in pairs(getconnections(RedeemButton.MouseButton1Click)) do
-                    connection.Function()
-                end
-                
-                OrionLib:MakeNotification({
-                    Name = "Code Attempted",
-                    Content = "Tried code: " .. code,
-                    Image = "rbxassetid://4483345998",
-                    Time = 2
-                })
-                
-                wait(1.5)
-            end
-            
-            OrionLib:MakeNotification({
-                Name = "Success",
-                Content = "All codes have been attempted!",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        else
-            OrionLib:MakeNotification({
-                Name = "Error",
-                Content = "Codes UI not found!",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-        end
-    end
-})
+AutoTab:AddLabel("Auto features will be added here.")
 
 -- ======= MISC TAB =======
 local MiscTab = Window:MakeTab({
@@ -279,7 +166,6 @@ local MiscTab = Window:MakeTab({
     PremiumOnly = false
 })
 
--- Placeholder for Misc tab content
 MiscTab:AddLabel("Miscellaneous features will be added here.")
 
 -- ======= SETTINGS TAB =======
@@ -289,7 +175,6 @@ local SettingsTab = Window:MakeTab({
     PremiumOnly = false
 })
 
--- Placeholder for Settings tab content
 SettingsTab:AddLabel("Settings will be added here.")
 
 -- ======= CREDITS TAB =======
