@@ -387,11 +387,7 @@ task.spawn(function()
                 end
             end
             
-            -- Unequip tool if no target is found
-            if not foundTarget and Player.Character:FindFirstChildWhichIsA("Tool") then
-                humanoid:UnequipTools()
-            end
-        end
+            
         task.wait(SlapSpeed)
     end
 end)
