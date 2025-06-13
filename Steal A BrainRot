@@ -1,7 +1,5 @@
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/ionlyusegithubformcmods/1-Line-Scripts/main/Mobile%20Friendly%20Orion')))()
 local Player = game.Players.LocalPlayer
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 -- Create UI Window
 local Window = OrionLib:MakeWindow({
@@ -19,6 +17,13 @@ OrionLib:MakeNotification({
     Time = 5
 })
 
+-- Variables
+local WalkSpeedValue = 16
+local JumpPowerValue = 50
+local GravityValue = 196.2
+local InfiniteJumpEnabled = false
+local NoClipEnabled = false
+
 -- ======= MAIN TAB =======
 local MainTab = Window:MakeTab({
     Name = "Main",
@@ -26,31 +31,23 @@ local MainTab = Window:MakeTab({
     PremiumOnly = false
 })
 
-local AutoSpin = false
-
-MainTab:AddToggle({
-    Name = "Auto Spin",
-    Default = false,
+MainTab:AddTextbox({
+    Name = "WalkSpeed",
+    Default = "16",
+    TextDisappear = true,
     Callback = function(Value)
-        AutoSpin = Value
-        if AutoSpin then
-            spawn(function()
-                while AutoSpin do
-                    local success, response = pcall(function()
-                        return game.ReplicatedStorage.Remotes.Spin:InvokeServer()
-                    end)
-                    if not success then
-                        OrionLib:MakeNotification({
-                            Name = "Spin Failed",
-                            Content = "Error: " .. tostring(response),
-                            Image = "rbxassetid://4483345998",
-                            Time = 3
-                        })
-                    end
-                    wait(1)
-                end
-            end)
-        end
+        local num = tonumber(Value)
+        if num then WalkSpeedValue = num end
+    end
+})
+
+MainTab:AddTextbox({
+    Name = "JumpPower",
+    Default = "50",
+    TextDisappear = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then JumpPowerValue = num end
     end
 })
 
@@ -61,94 +58,51 @@ local PlayerTab = Window:MakeTab({
     PremiumOnly = false
 })
 
--- WalkSpeed
-local WalkSpeedValue = 16
 PlayerTab:AddTextbox({
     Name = "WalkSpeed",
     Default = "16",
     TextDisappear = true,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num then
-            WalkSpeedValue = num
-        end
+        if num then WalkSpeedValue = num end
     end
 })
 
--- JumpPower
-local JumpPowerValue = 50
 PlayerTab:AddTextbox({
     Name = "JumpPower",
     Default = "50",
     TextDisappear = true,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num then
-            JumpPowerValue = num
-        end
+        if num then JumpPowerValue = num end
     end
 })
 
--- Gravity Scale
 PlayerTab:AddTextbox({
     Name = "Gravity Scale",
     Default = "196.2",
     TextDisappear = true,
     Callback = function(Value)
-        local g = tonumber(Value)
-        if g then
-            workspace.Gravity = g
-        end
+        local num = tonumber(Value)
+        if num then GravityValue = num end
     end
 })
 
--- Infinite Jump
-local infJump = false
 PlayerTab:AddToggle({
     Name = "Infinite Jump",
     Default = false,
     Callback = function(Value)
-        infJump = Value
+        InfiniteJumpEnabled = Value
     end
 })
 
-UIS.JumpRequest:Connect(function()
-    if infJump and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
-        Player.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- No Clip
-local noClip = false
 PlayerTab:AddToggle({
     Name = "No Clip",
     Default = false,
     Callback = function(Value)
-        noClip = Value
+        NoClipEnabled = Value
     end
 })
-
-RunService.Stepped:Connect(function()
-    if noClip and Player.Character then
-        for _, part in pairs(Player.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
-end)
-
--- Constantly apply WalkSpeed & JumpPower
-spawn(function()
-    while true do
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-            local h = Player.Character.Humanoid
-            h.WalkSpeed = WalkSpeedValue
-            h.JumpPower = JumpPowerValue
-        end
-        wait(0.1)
-    end
-end)
 
 -- ======= COMBAT TAB =======
 local CombatTab = Window:MakeTab({
@@ -196,8 +150,36 @@ local CreditsTab = Window:MakeTab({
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
-CreditsTab:AddLabel("Script created by Jeetendra or your name here.")
+CreditsTab:AddLabel("Script created by Jeetendra.")
 CreditsTab:AddLabel("Powered by OrionLib.")
 
--- Init UI
+-- ===== LOOP for applying values =====
+game:GetService("RunService").RenderStepped:Connect(function()
+    if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+        local h = Player.Character.Humanoid
+        h.WalkSpeed = WalkSpeedValue
+        h.JumpPower = JumpPowerValue
+    end
+    workspace.Gravity = GravityValue
+end)
+
+-- ===== INFINITE JUMP =====
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if InfiniteJumpEnabled and Player.Character and Player.Character:FindFirstChild("Humanoid") then
+        Player.Character:FindFirstChild("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- ===== NO CLIP =====
+game:GetService("RunService").Stepped:Connect(function()
+    if NoClipEnabled and Player.Character then
+        for _, part in pairs(Player.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- Init
 OrionLib:Init()
