@@ -1,0 +1,306 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/ionlyusegithubformcmods/1-Line-Scripts/main/Mobile%20Friendly%20Orion')))()
+local Player = game.Players.LocalPlayer
+
+-- Create UI Window
+local Window = OrionLib:MakeWindow({
+    Name = "Steal A BrainRot",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "OrionTest",
+    IntroText = "Loading Script..."
+})
+
+OrionLib:MakeNotification({
+    Name = "Logged In!",
+    Content = "Enjoy " .. Player.Name .. "!",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
+-- ======= MAIN TAB =======
+local MainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local WalkSpeedValue = 16 -- Default WalkSpeed
+local JumpPowerValue = 50 -- Default JumpPower
+
+MainTab:AddTextbox({
+    Name = "WalkSpeed",
+    Default = "Enter WalkSpeed.",
+    TextDisappear = true,
+    Callback = function(Value)
+        local number = tonumber(Value)
+        if number then
+            WalkSpeedValue = number
+        end
+    end  
+})
+
+MainTab:AddTextbox({
+    Name = "JumpPower",
+    Default = "Enter JumpPower.",
+    TextDisappear = true,
+    Callback = function(Value)
+        local number = tonumber(Value)
+        if number then
+            JumpPowerValue = number
+        end
+    end  
+})
+
+local AutoSpin = false
+
+MainTab:AddToggle({
+    Name = "Auto Spin",
+    Default = false,
+    Callback = function(Value)
+        AutoSpin = Value
+        if AutoSpin then
+            spawn(function()
+                while AutoSpin do
+                    local success, response = pcall(function()
+                        return game.ReplicatedStorage.Remotes.Spin:InvokeServer()
+                    end)
+                    if not success then
+                        OrionLib:MakeNotification({
+                            Name = "Spin Failed",
+                            Content = "Error: " .. tostring(response),
+                            Image = "rbxassetid://4483345998",
+                            Time = 3
+                        })
+                    end
+                    wait(1)
+                end
+            end)
+        end
+    end
+})
+
+-- Apply WalkSpeed and JumpPower constantly
+spawn(function()
+    while true do
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            local Humanoid = Player.Character.Humanoid
+            Humanoid.WalkSpeed = WalkSpeedValue
+            Humanoid.JumpPower = JumpPowerValue
+        end
+        wait(0.1)
+    end
+end)
+
+-- ======= PLAYER TAB =======
+local PlayerTab = Window:MakeTab({
+    Name = "Player",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local Players = game:GetService("Players")
+local SelectedPlayer = nil
+
+local function updatePlayerList()
+    local playerNames = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        table.insert(playerNames, player.Name)
+    end
+    playerDropdown:UpdateDropdown({
+        Name = "Select Player",
+        Options = playerNames
+    })
+end
+
+local playerDropdown = PlayerTab:AddDropdown({
+    Name = "Select Player",
+    Default = nil,
+    Options = {},
+    Callback = function(Value)
+        SelectedPlayer = Value
+    end
+})
+
+PlayerTab:AddButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        updatePlayerList()
+    end
+})
+
+PlayerTab:AddButton({
+    Name = "Kill Player",
+    Callback = function()
+        if SelectedPlayer then
+            local RemoteFunction = game.ReplicatedStorage.Remotes:FindFirstChild("Kill")
+            if RemoteFunction and RemoteFunction:IsA("RemoteFunction") then
+                RemoteFunction:InvokeServer(Players[SelectedPlayer])
+                OrionLib:MakeNotification({
+                    Name = "Success",
+                    Content = "Killed " .. SelectedPlayer,
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            else
+                OrionLib:MakeNotification({
+                    Name = "Error",
+                    Content = "Kill function not found!",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            end
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "No player selected!",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+PlayerTab:AddButton({
+    Name = "Kick Player",
+    Callback = function()
+        if SelectedPlayer then
+            local RemoteFunction = game.ReplicatedStorage.Remotes:FindFirstChild("Kick")
+            if RemoteFunction and RemoteFunction:IsA("RemoteFunction") then
+                RemoteFunction:InvokeServer(Players[SelectedPlayer])
+                OrionLib:MakeNotification({
+                    Name = "Success",
+                    Content = "Kicked " .. SelectedPlayer,
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            else
+                OrionLib:MakeNotification({
+                    Name = "Error",
+                    Content = "Kick function not found!",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            end
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "No player selected!",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+updatePlayerList()
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoved:Connect(updatePlayerList)
+
+-- ======= COMBAT TAB =======
+local CombatTab = Window:MakeTab({
+    Name = "Combat",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Placeholder for Combat tab content
+CombatTab:AddLabel("Combat features will be added here.")
+
+-- ======= VISUAL TAB =======
+local VisualTab = Window:MakeTab({
+    Name = "Visual",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Placeholder for Visual tab content
+VisualTab:AddLabel("Visual features will be added here.")
+
+-- ======= AUTO TAB =======
+local AutoTab = Window:MakeTab({
+    Name = "Auto",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+AutoTab:AddButton({
+    Name = "Auto Redeem Codes",
+    Callback = function()
+        local Codes = { -- Add your codes here
+            "CODE1",
+            "CODE2",
+            "CODE3",
+        }
+        local ScreenGui = Player.PlayerGui:FindFirstChild("ScreenGui")
+        if ScreenGui and ScreenGui:FindFirstChild("Codes") then
+            local CodesUI = ScreenGui.Codes.Main
+            local InputBox = CodesUI.Input.TextBox
+            local RedeemButton = CodesUI.Redeem.TextButton
+            
+            for _, code in ipairs(Codes) do
+                InputBox.Text = code
+                wait(0.5)
+                
+                for _, connection in pairs(getconnections(RedeemButton.MouseButton1Click)) do
+                    connection.Function()
+                end
+                
+                OrionLib:MakeNotification({
+                    Name = "Code Attempted",
+                    Content = "Tried code: " .. code,
+                    Image = "rbxassetid://4483345998",
+                    Time = 2
+                })
+                
+                wait(1.5)
+            end
+            
+            OrionLib:MakeNotification({
+                Name = "Success",
+                Content = "All codes have been attempted!",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "Codes UI not found!",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+-- ======= MISC TAB =======
+local MiscTab = Window:MakeTab({
+    Name = "Misc",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Placeholder for Misc tab content
+MiscTab:AddLabel("Miscellaneous features will be added here.")
+
+-- ======= SETTINGS TAB =======
+local SettingsTab = Window:MakeTab({
+    Name = "Settings",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Placeholder for Settings tab content
+SettingsTab:AddLabel("Settings will be added here.")
+
+-- ======= CREDITS TAB =======
+local CreditsTab = Window:MakeTab({
+    Name = "Credits",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+CreditsTab:AddLabel("Script created by Jeetendra or your name here.")
+CreditsTab:AddLabel("Powered by OrionLib.")
+
+-- Initialize UI
+OrionLib:Init()
