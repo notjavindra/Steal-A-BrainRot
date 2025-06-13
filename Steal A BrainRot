@@ -160,34 +160,34 @@ UIS.JumpRequest:Connect(function()
 end)
 
 -- ======= COMBAT TAB =======
--- ======= COMBAT TAB =======
 local CombatTab = Window:MakeTab({
     Name = "Combat",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
-local SlapRadius = 10
+local SlapSpeed = 0.1 -- Default slap speed (seconds between slaps)
 local AutoSlap = false
+local DefaultSlapRadius = 10 -- Default distance for detecting players
 
 CombatTab:AddTextbox({
-    Name = "Slap Radius",
-    Default = "10",
+    Name = "Slap Speed",
+    Default = "0.1",
     TextDisappear = true,
     Callback = function(Value)
         local number = tonumber(Value)
-        if number then
-            SlapRadius = number
+        if number and number > 0 then
+            SlapSpeed = number
             OrionLib:MakeNotification({
-                Name = "Slap Radius Updated",
-                Content = "Set to " .. number .. " studs",
+                Name = "Slap Speed Updated",
+                Content = "Set to " .. number .. " seconds",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
         else
             OrionLib:MakeNotification({
                 Name = "Invalid Input",
-                Content = "Please enter a valid number",
+                Content = "Please enter a positive number",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
@@ -196,18 +196,16 @@ CombatTab:AddTextbox({
 })
 
 CombatTab:AddToggle({
-    Name = "Auto-Slape",
+    Name = "Auto-Slap",
     Default = false,
     Callback = function(Value)
         AutoSlap = Value
-        if AutoSlap then
-            OrionLib:MakeNotification({
-                Name = "Auto-Slap",
-                Content = "Auto-Slap " .. (Value and "enabled" or "disabled"),
-                Image = "rbxassetid://4483345998",
-                Time = 3
-            })
-        end
+        OrionLib:MakeNotification({
+            Name = "Auto-Slap",
+            Content = "Auto-Slap " .. (Value and "enabled" or "disabled"),
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
     end
 })
 
@@ -224,8 +222,8 @@ task.spawn(function()
                     local theirRoot = plr.Character.HumanoidRootPart
                     local dist = (myRoot.Position - theirRoot.Position).Magnitude
                     
-                    -- If player is within slap radius
-                    if dist <= SlapRadius then
+                    -- If player is within default slap radius
+                    if dist <= DefaultSlapRadius then
                         local tool = Player.Backpack:FindFirstChild("Tung Bat") or Player.Character:FindFirstChild("Tung Bat")
                         
                         if tool then
@@ -261,7 +259,7 @@ task.spawn(function()
                 end
             end
         end
-        task.wait(0.1) -- Adjust wait time to prevent lag
+        task.wait(SlapSpeed) -- Use SlapSpeed for delay between slap attempts
     end
 end)
 -- ======= VISUAL TAB =======
