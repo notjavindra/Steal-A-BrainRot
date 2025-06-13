@@ -824,6 +824,7 @@ SettingsTab:AddButton({
     Name = "Load Settings",
     Callback = function()
         OrionLib:LoadConfig()
+        print("Loaded config:", espEnabled, nameEnabled, baseLockEnabled, AutoSlap, antiAFK, fpsBoost, spinBot, WalkSpeedValue, JumpPowerValue, GravityScale)
         OrionLib:MakeNotification({
             Name = "Settings Loaded",
             Content = "Settings have been loaded successfully!",
