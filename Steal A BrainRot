@@ -146,6 +146,7 @@ local MainTab = Window:MakeTab({
 local WalkSpeedValue = 16
 local JumpPowerValue = 50
 local GravityScale = 1
+local selectedTool = nil
 
 -- WalkSpeed Slider
 MainTab:AddSlider({
@@ -183,6 +184,95 @@ MainTab:AddSlider({
     Increment = 0.1,
     Callback = function(Value)
         GravityScale = Value
+    end
+})
+
+-- Tools Dropdown
+local toolOptions = {}
+for _, item in pairs(game.ReplicatedStorage.Items:GetChildren()) do
+    if item:IsA("Tool") then
+        table.insert(toolOptions, item.Name)
+    end
+end
+MainTab:AddDropdown({
+    Name = "Tools",
+    Default = toolOptions[1] or "",
+    Options = toolOptions,
+    Callback = function(Value)
+        selectedTool = Value
+    end
+})
+
+-- Get Selected Tool Button
+MainTab:AddButton({
+    Name = "Get Selected Tool",
+    Callback = function()
+        if selectedTool and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+            local tool = game.ReplicatedStorage.Items:FindFirstChild(selectedTool)
+            if tool and tool:IsA("Tool") then
+                local clonedTool = tool:Clone()
+                clonedTool.Parent = Player.Backpack
+                OrionLib:MakeNotification({
+                    Name = "Tool Given",
+                    Content = "You received " .. selectedTool .. "!",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            else
+                OrionLib:MakeNotification({
+                    Name = "Error",
+                    Content = "Tool not found in ReplicatedStorage.Items.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            end
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "No tool selected or character not found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
+    end
+})
+
+-- Give All Tools Button
+MainTab:AddButton({
+    Name = "Give All Tools",
+    Callback = function()
+        if Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then
+            local givenTools = {}
+            for _, item in pairs(game.ReplicatedStorage.Items:GetChildren()) do
+                if item:IsA("Tool") then
+                    local clonedTool = item:Clone()
+                    clonedTool.Parent = Player.Backpack
+                    table.insert(givenTools, item.Name)
+                end
+            end
+            if #givenTools > 0 then
+                OrionLib:MakeNotification({
+                    Name = "Tools Given",
+                    Content = "You received all tools: " .. table.concat(givenTools, ", "),
+                    Image = "rbxassetid://4483345998",
+                    Time = 5
+                })
+            else
+                OrionLib:MakeNotification({
+                    Name = "Error",
+                    Content = "No tools found in ReplicatedStorage.Items.",
+                    Image = "rbxassetid://4483345998",
+                    Time = 3
+                })
+            end
+        else
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "Character or Humanoid not found.",
+                Image = "rbxassetid://4483345998",
+                Time = 3
+            })
+        end
     end
 })
 
@@ -641,7 +731,7 @@ MiscTab:AddButton({
         else
             OrionLib:MakeNotification({
                 Name = "Server Hop Failed",
-                Content = "No available servers found.",
+                Content = "No available tools found.",
                 Image = "rbxassetid://4483345998",
                 Time = 3
             })
