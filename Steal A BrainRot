@@ -223,32 +223,6 @@ MainTab:AddButton({
     end
 })
 
--- Auto Spin
-MainTab:AddToggle({
-    Name = "Auto Spin",
-    Default = false,
-    Callback = function(Value)
-        AutoSpin = Value
-        if AutoSpin then
-            spawn(function()
-                while AutoSpin do
-                    local success, response = pcall(function()
-                        return game.ReplicatedStorage.Remotes.Spin:InvokeServer()
-                    end)
-                    if not success then
-                        OrionLib:MakeNotification({
-                            Name = "Spin Failed",
-                            Content = "Error: " .. tostring(response),
-                            Image = "rbxassetid://4483345998",
-                            Time = 3
-                        })
-                    end
-                    task.wait(1)
-                end
-            end)
-        end
-    end
-})
 
 -- Looped updates: Speed, Jump, Gravity
 RunService.RenderStepped:Connect(function()
